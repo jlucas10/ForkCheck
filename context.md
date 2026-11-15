@@ -204,8 +204,12 @@ Track cost and latency per call in `llm_calls`.
 - [ ] Monorepo: `/app` (Expo), `/api` (FastAPI), `/ingest` (Python), `/infra` (Terraform)
 - [ ] Supabase project with pgvector and full-text search
 - [ ] Auth0: native app, API with RBAC, `user` / `reviewer` / `admin`, first-login Action, Apple and Google sign-in
-- [ ] FastAPI skeleton on Railway or Render: health check, settings, JWT validation, `require_permission()`
-- [ ] CI on GitHub Actions: lint, type-check, tests
+- [ ] FastAPI skeleton on Railway or Render:
+  - [x] Health check and settings (including Auth0 domain and audience)
+  - [ ] JWT validation (JWKS signature, `iss`, `aud`, expiry)
+  - [ ] `require_permission()`
+  - [ ] Containerize and deploy to Railway or Render
+- [x] CI on GitHub Actions: lint, type-check, tests
 - **Done when:** you sign in on your phone, call an authenticated endpoint, and a test proves a token without the right permission gets a 403.
 
 ### Sprint 1: Packaged catalog, detection, eval v1 and first Terraform
