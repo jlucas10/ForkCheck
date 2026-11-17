@@ -206,7 +206,7 @@ Track cost and latency per call in `llm_calls`.
 - [ ] Auth0: native app, API with RBAC, `user` / `reviewer` / `admin`, first-login Action, Apple and Google sign-in
 - [ ] FastAPI skeleton on Railway or Render:
   - [x] Health check and settings (including Auth0 domain and audience)
-  - [ ] JWT validation (JWKS signature, `iss`, `aud`, expiry)
+  - [x] JWT validation (JWKS signature, `iss`, `aud`, expiry)
   - [ ] `require_permission()`
   - [ ] Containerize and deploy to Railway or Render
 - [x] CI on GitHub Actions: lint, type-check, tests
