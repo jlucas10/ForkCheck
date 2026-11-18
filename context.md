@@ -124,7 +124,7 @@ Embeddings may retrieve candidates or propose alias candidates into the review q
 
 ## Auth and access
 
-- Auth0 tenant (shared with Reelsmith). Native app: Authorization Code + PKCE via `react-native-auth0`. API registered with RBAC and "Add Permissions in the Access Token."
+- Auth0 tenant. Native app: Authorization Code + PKCE via `react-native-auth0`. API registered with RBAC and "Add Permissions in the Access Token."
 - Roles: `user` (assigned by an Auth0 Action on first login), `reviewer` (user + `review:allergens`), `admin` (reviewer + `manage:catalog`, `manage:users`, `read:audit_log`).
 - **MFA required** for `reviewer` and `admin` (Auth0 Action). Check which features your Auth0 plan includes.
 - FastAPI validates every token (signature via JWKS, `iss`, `aud`, expiry) and uses `require_permission(...)`. Check permissions, never role names.
