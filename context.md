@@ -207,7 +207,7 @@ Track cost and latency per call in `llm_calls`.
 - [ ] FastAPI skeleton on Railway or Render:
   - [x] Health check and settings (including Auth0 domain and audience)
   - [x] JWT validation (JWKS signature, `iss`, `aud`, expiry)
-  - [ ] `require_permission()`
+  - [x] `require_permission()`
   - [ ] Containerize and deploy to Railway or Render
 - [x] CI on GitHub Actions: lint, type-check, tests
 - **Done when:** you sign in on your phone, call an authenticated endpoint, and a test proves a token without the right permission gets a 403.
