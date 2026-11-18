@@ -1,4 +1,5 @@
 import time
+from collections.abc import Iterator
 from typing import Annotated, Any
 
 import jwt
@@ -7,8 +8,16 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from app.auth import AuthError, TokenClaims, decode_token, get_current_claims
-from app.config import Settings
+from app import auth
+from app.auth import (
+    AuthError,
+    TokenClaims,
+    decode_token,
+    get_current_claims,
+    require_permission,
+)
+from app.config import Settings, get_settings
+from app.main import app as real_app
 
 DOMAIN = "test.us.auth0.com"
 AUDIENCE = "https://api.forkcheck"
@@ -101,3 +110,65 @@ def test_missing_header_is_401() -> None:
 def test_garbage_token_is_401() -> None:
     response = client.get("/whoami", headers={"Authorization": "Bearer not-a-jwt"})
     assert response.status_code == 401
+
+
+# --- require_permission, end to end ----------------------------------------
+
+
+class FakeJWKSClient:
+    """Stands in for Auth0's key server: always hands back our test public key."""
+
+    def get_signing_key_from_jwt(self, token: str) -> rsa.RSAPublicKey:
+        return KEY.public_key()
+
+
+@pytest.fixture
+def configured(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    monkeypatch.setattr(auth, "get_jwks_client", lambda: FakeJWKSClient())
+    for target in (app, real_app):
+        target.dependency_overrides[get_settings] = lambda: SETTINGS
+    yield
+    for target in (app, real_app):
+        target.dependency_overrides.clear()
+
+
+@app.get("/reviews")
+def reviews(
+    claims: Annotated[TokenClaims, Depends(require_permission("review:allergens"))],
+) -> TokenClaims:
+    return claims
+
+
+def bearer(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.mark.usefixtures("configured")
+def test_permission_present_is_200() -> None:
+    response = client.get("/reviews", headers=bearer(make_token()))
+    assert response.status_code == 200
+
+
+@pytest.mark.usefixtures("configured")
+@pytest.mark.parametrize("permissions", [[], ["manage:catalog"], ["review:allergens:extra"]])
+def test_permission_missing_is_403(permissions: list[str]) -> None:
+    response = client.get("/reviews", headers=bearer(make_token(permissions=permissions)))
+    assert response.status_code == 403
+
+
+@pytest.mark.usefixtures("configured")
+def test_no_token_on_protected_route_is_401_not_403() -> None:
+    assert client.get("/reviews").status_code == 401
+
+
+@pytest.mark.usefixtures("configured")
+def test_me_returns_sub_for_valid_token() -> None:
+    real_client = TestClient(real_app)
+    response = real_client.get("/me", headers=bearer(make_token()))
+    assert response.status_code == 200
+    assert response.json()["sub"] == "auth0|abc123"
+
+
+@pytest.mark.usefixtures("configured")
+def test_me_rejects_missing_token() -> None:
+    assert TestClient(real_app).get("/me").status_code == 401

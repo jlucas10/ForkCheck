@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from functools import lru_cache
 from typing import Annotated
 
@@ -82,3 +83,19 @@ def get_current_claims(
         return decode_token(credentials.credentials, signing_key, settings)
     except (AuthError, jwt.PyJWTError) as exc:
         raise unauthorized from exc
+
+
+def require_permission(permission: str) -> Callable[[TokenClaims], TokenClaims]:
+    """Build a dependency that only lets through callers whose token has `permission`.
+
+    Checks the permission string (e.g. "review:allergens"), never a role name.
+    A caller who isn't logged in gets 401 (from get_current_claims); a logged-in
+    caller without the permission gets 403.
+    """
+
+    def check(claims: Annotated[TokenClaims, Depends(get_current_claims)]) -> TokenClaims:
+        if permission not in claims.permissions:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        return claims
+
+    return check
