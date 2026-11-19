@@ -209,6 +209,7 @@ Track cost and latency per call in `llm_calls`.
   - [x] JWT validation (JWKS signature, `iss`, `aud`, expiry)
   - [x] `require_permission()`
   - [x] Containerize (Dockerfile)
+    - [x] Auth0 roles, and permissions created
   - [ ] Deploy to Railway or Render
 - [x] CI on GitHub Actions: lint, type-check, tests
 - **Done when:** you sign in on your phone, call an authenticated endpoint, and a test proves a token without the right permission gets a 403.
