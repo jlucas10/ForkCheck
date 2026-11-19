@@ -1,7 +1,10 @@
+import logging
+import ssl
 from collections.abc import Callable
 from functools import lru_cache
 from typing import Annotated
 
+import certifi
 import jwt
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from fastapi import Depends, HTTPException, status
@@ -10,6 +13,9 @@ from jwt import PyJWKClient
 from pydantic import BaseModel, Field
 
 from app.config import Settings, get_settings
+
+# uvicorn shows warnings from this logger in the server terminal.
+logger = logging.getLogger("uvicorn.error")
 
 # Only accept RS256. Pinning the algorithm stops "alg: none" and
 # "switch RS256 to HS256" tricks, where an attacker picks a weaker algorithm.
@@ -58,7 +64,10 @@ def decode_token(
 @lru_cache
 def get_jwks_client() -> PyJWKClient:
     """One shared client that downloads and caches Auth0's public keys."""
-    return PyJWKClient(get_settings().auth0_jwks_url)
+    # Trust certifi's certificate bundle instead of the OS's. Python on macOS often
+    # can't find the system certificates, which made every key download fail.
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    return PyJWKClient(get_settings().auth0_jwks_url, ssl_context=ssl_context)
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -82,6 +91,10 @@ def get_current_claims(
         signing_key = get_jwks_client().get_signing_key_from_jwt(credentials.credentials)
         return decode_token(credentials.credentials, signing_key, settings)
     except (AuthError, jwt.PyJWTError) as exc:
+        # The client always sees the same 401, but the server log says why.
+        # Log the error type and message only. Never log the token itself.
+        reason = exc.__cause__ or exc
+        logger.warning("Token rejected: %s: %s", type(reason).__name__, reason)
         raise unauthorized from exc
 
 
