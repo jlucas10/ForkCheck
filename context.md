@@ -124,7 +124,7 @@ Embeddings may retrieve candidates or propose alias candidates into the review q
 
 ## Auth and access
 
-- Auth0 tenant (shared with Reelsmith). Native app: Authorization Code + PKCE via `react-native-auth0`. API registered with RBAC and "Add Permissions in the Access Token."
+- Auth0 tenant. Native app: Authorization Code + PKCE via `react-native-auth0`. API registered with RBAC and "Add Permissions in the Access Token."
 - Roles: `user` (assigned by an Auth0 Action on first login), `reviewer` (user + `review:allergens`), `admin` (reviewer + `manage:catalog`, `manage:users`, `read:audit_log`).
 - **MFA required** for `reviewer` and `admin` (Auth0 Action). Check which features your Auth0 plan includes.
 - FastAPI validates every token (signature via JWKS, `iss`, `aud`, expiry) and uses `require_permission(...)`. Check permissions, never role names.
@@ -208,7 +208,9 @@ Track cost and latency per call in `llm_calls`.
   - [x] Health check and settings (including Auth0 domain and audience)
   - [x] JWT validation (JWKS signature, `iss`, `aud`, expiry)
   - [x] `require_permission()`
-  - [ ] Containerize and deploy to Railway or Render
+  - [x] Containerize (Dockerfile)
+    - [x] Auth0 roles, and permissions created
+  - [ ] Deploy to Railway or Render
 - [x] CI on GitHub Actions: lint, type-check, tests
 - **Done when:** you sign in on your phone, call an authenticated endpoint, and a test proves a token without the right permission gets a 403.
 
